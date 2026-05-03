@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RuckVision IA</title>
+
+<style>
+body{font-family:Arial;background:#0b0c10;color:white;text-align:center}
+button{background:#22c55e;padding:12px;border:none;cursor:pointer}
+img{width:120px;margin:5px}
+</style>
+</head>
+
+<body>
+
+<h1>RuckVision IA</h1>
+
+<input type="file" id="videoInput">
+<br><br>
+<video id="video" width="300" controls></video>
+
+<br>
+<button onclick="analizar()">Analizar</button>
+
+<div id="frames"></div>
+
+<h3 id="resultado"></h3>
+
+<canvas id="canvas" style="display:none;"></canvas>
+
+<script>
+let frames = [];
+
+videoInput.onchange = e => {
+  video.src = URL.createObjectURL(e.target.files[0]);
+};
+
+async function analizar() {
+  frames = [];
+  framesDiv.innerHTML = "";
+  resultado.innerText = "Analizando...";
+
+  const duration = video.duration;
+
+  for(let i=1;i<=4;i++){
+    video.currentTime = (duration/5)*i;
+    await new Promise(r=>setTimeout(r,500));
+
+    canvas.width = 420;
+    canvas.height = 300;
+
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video,0,0,420,300);
+
+    const img = canvas.toDataURL("image/jpeg",0.5);
+    frames.push(img);
+
+    const im = document.createElement("img");
+    im.src = img;
+    framesDiv.appendChild(im);
+  }
+
+  const res = await fetch("/.netlify/functions/analyze-rugby", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({ frames })
+  });
+
+  const data = await res.json();
+
+  resultado.innerText = data.analysis.error_principal;
+}
+</script>
+
+</body>
+</html>
