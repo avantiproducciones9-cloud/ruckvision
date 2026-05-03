@@ -1,294 +1,76 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RuckVision IA - Análisis de Rugby</title>
-    <style>
-        :root {
-            --primary: #e63946;
-            --dark-bg: #0b0c10;
-            --card-bg: #1f2833;
-            --text-main: #66fcf1;
-            --text-white: #ffffff;
-            --accent: #45a29e;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RuckVision IA</title>
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--dark-bg);
-            color: var(--text-white);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .container {
-            max-width: 900px;
-            width: 100%;
-        }
-
-        header {
-            text-align: center;
-            padding: 20px 0;
-            border-bottom: 2px solid var(--primary);
-            margin-bottom: 30px;
-        }
-
-        h1 { color: var(--primary); margin: 0; text-transform: uppercase; letter-spacing: 2px; }
-
-        .upload-section {
-            background: var(--card-bg);
-            padding: 30px;
-            border-radius: 10px;
-            text-align: center;
-            border: 2px dashed var(--accent);
-            margin-bottom: 20px;
-        }
-
-        input[type="file"] { display: none; }
-        .btn {
-            background: var(--primary);
-            color: white;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: 0.3s;
-            text-transform: uppercase;
-            margin: 10px;
-        }
-        .btn:hover { filter: brightness(1.2); }
-        .btn:disabled { background: #555; cursor: not-allowed; }
-
-        #videoPreview {
-            width: 100%;
-            border-radius: 8px;
-            margin-top: 20px;
-            display: none;
-            background: #000;
-        }
-
-        .frames-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 10px;
-            margin: 20px 0;
-        }
-        .frame-thumb {
-            width: 100%;
-            border: 1px solid var(--accent);
-            border-radius: 4px;
-        }
-
-        #loader {
-            display: none;
-            margin: 20px 0;
-            color: var(--text-main);
-            font-style: italic;
-        }
-
-        /* Resultados */
-        #resultArea {
-            display: none;
-            background: var(--card-bg);
-            padding: 25px;
-            border-radius: 10px;
-            border-left: 5px solid var(--primary);
-            margin-top: 30px;
-        }
-
-        .result-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        .badge {
-            background: var(--accent);
-            color: var(--dark-bg);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-weight: bold;
-            font-size: 0.9em;
-        }
-
-        .exercise-list { padding-left: 20px; color: var(--text-main); }
-
-        @media print {
-            .upload-section, .btn, #loader, header { display: none !important; }
-            #resultArea { display: block !important; border: none; color: black; }
-            body { background: white; color: black; }
-        }
-    </style>
+<style>
+body{font-family:Arial;background:#0b0c10;color:white;text-align:center}
+button{background:#22c55e;padding:12px;border:none;cursor:pointer}
+img{width:120px;margin:5px}
+</style>
 </head>
+
 <body>
 
-<div class="container">
-    <header>
-        <h1>RuckVision IA</h1>
-        <p>Análisis Técnico de Jugadas de Rugby Profesional</p>
-    </header>
+<h1>RuckVision IA</h1>
 
-    <main>
-        <div class="upload-section" id="dropZone">
-            <p>Sube el video de la jugada (MP4/MOV)</p>
-            <label class="btn" for="videoInput">Seleccionar Video</label>
-            <input type="file" id="videoInput" accept="video/*">
-        </div>
+<input type="file" id="videoInput">
+<br><br>
+<video id="video" width="300" controls></video>
 
-        <video id="videoPreview" controls></video>
-        
-        <div id="framesPreview" class="frames-container"></div>
+<br>
+<button onclick="analizar()">Analizar</button>
 
-        <div style="text-align: center;">
-            <button id="analyzeBtn" class="btn" style="display: none;">Analizar jugada con IA</button>
-        </div>
+<div id="frames"></div>
 
-        <div id="loader">Analizando jugada... Por favor espera, la IA está procesando los frames.</div>
-
-        <!-- Sección de Resultados -->
-        <div id="resultArea">
-            <h2 id="resTitulo">Análisis de la Jugada</h2>
-            <div class="result-grid">
-                <div>
-                    <p><strong>Jugador:</strong> <span id="resJugador"></span></p>
-                    <p><strong>Confianza:</strong> <span id="resConfianza" class="badge"></span></p>
-                </div>
-                <div>
-                    <p><strong>Error Detectado:</strong> <span id="resError" style="color:var(--primary)"></span></p>
-                </div>
-            </div>
-            <hr style="border: 0; border-top: 1px solid #444; margin: 20px 0;">
-            <h3>Consecuencia</h3>
-            <p id="resConsecuencia"></p>
-            <h3>Corrección Técnica</h3>
-            <p id="resCorreccion"></p>
-            <h3>Ejercicios Recomendados</h3>
-            <ul id="resEjercicios" class="exercise-list"></ul>
-            
-            <div style="margin-top: 30px; display: flex; gap: 10px;">
-                <button class="btn" style="background:#2ecc71" onclick="window.print()">Exportar PDF</button>
-                <button class="btn" style="background:#25D366" id="shareWA">Compartir WhatsApp</button>
-            </div>
-        </div>
-    </main>
-</div>
+<h3 id="resultado"></h3>
 
 <canvas id="canvas" style="display:none;"></canvas>
 
 <script>
-    const videoInput = document.getElementById('videoInput');
-    const videoPreview = document.getElementById('videoPreview');
-    const analyzeBtn = document.getElementById('analyzeBtn');
-    const framesPreview = document.getElementById('framesPreview');
-    const loader = document.getElementById('loader');
-    const resultArea = document.getElementById('resultArea');
-    const canvas = document.getElementById('canvas');
+let frames = [];
 
-    let extractedFrames = [];
+videoInput.onchange = e => {
+  video.src = URL.createObjectURL(e.target.files[0]);
+};
 
-    videoInput.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
+async function analizar() {
+  frames = [];
+  framesDiv.innerHTML = "";
+  resultado.innerText = "Analizando...";
 
-        const url = URL.createObjectURL(file);
-        videoPreview.src = url;
-        videoPreview.style.display = 'block';
-        analyzeBtn.style.display = 'inline-block';
-        
-        // Limpiar previos
-        extractedFrames = [];
-        framesPreview.innerHTML = '';
-        resultArea.style.display = 'none';
+  const duration = video.duration;
 
-        // Auto-captura de frames al cargar
-        videoPreview.onloadedmetadata = () => {
-            captureFrames();
-        };
-    });
+  for(let i=1;i<=4;i++){
+    video.currentTime = (duration/5)*i;
+    await new Promise(r=>setTimeout(r,500));
 
-    async function captureFrames() {
-        const duration = videoPreview.duration;
-        const interval = duration / 5; // Capturar 5 momentos clave
-        
-        for (let i = 1; i <= 5; i++) {
-            videoPreview.currentTime = i * interval - 0.5;
-            await new Promise(r => setTimeout(r, 500)); // Esperar a que el video busque
-            
-            canvas.width = 640;
-            canvas.height = 360;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(videoPreview, 0, 0, canvas.width, canvas.height);
-            
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-            extractedFrames.push(dataUrl);
+    canvas.width = 420;
+    canvas.height = 300;
 
-            const img = document.createElement('img');
-            img.src = dataUrl;
-            img.className = 'frame-thumb';
-            framesPreview.appendChild(img);
-        }
-    }
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video,0,0,420,300);
 
-    analyzeBtn.addEventListener('click', async () => {
-        if (extractedFrames.length === 0) return alert("No hay frames para analizar");
+    const img = canvas.toDataURL("image/jpeg",0.5);
+    frames.push(img);
 
-        loader.style.display = 'block';
-        analyzeBtn.disabled = true;
-        resultArea.style.display = 'none';
+    const im = document.createElement("img");
+    im.src = img;
+    framesDiv.appendChild(im);
+  }
 
-        try {
-            const response = await fetch('/.netlify/functions/analyze-rugby', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    frames: extractedFrames,
-                    team: "General",
-                    focus: "Técnica individual"
-                })
-            });
+  const res = await fetch("/.netlify/functions/analyze-rugby", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({ frames })
+  });
 
-            const data = await response.json();
-            if (data.error) throw new Error(data.error);
+  const data = await res.json();
 
-            displayResults(data);
-        } catch (err) {
-            alert("Error al analizar: " + err.message);
-        } finally {
-            loader.style.display = 'none';
-            analyzeBtn.disabled = false;
-        }
-    });
-
-    function displayResults(data) {
-        document.getElementById('resTitulo').innerText = data.titulo || "Análisis Finalizado";
-        document.getElementById('resJugador').innerText = data.jugador_probable || "No identificado";
-        document.getElementById('resConfianza').innerText = data.confianza || "N/A";
-        document.getElementById('resError').innerText = data.error_principal || "Ninguno detectable";
-        document.getElementById('resConsecuencia').innerText = data.consecuencia || "N/A";
-        document.getElementById('resCorreccion').innerText = data.correccion || "N/A";
-        
-        const list = document.getElementById('resEjercicios');
-        list.innerHTML = '';
-        (data.ejercicios || []).forEach(ex => {
-            const li = document.createElement('li');
-            li.innerText = ex;
-            list.appendChild(li);
-        });
-
-        resultArea.style.display = 'block';
-        window.scrollTo({ top: resultArea.offsetTop, behavior: 'smooth' });
-
-        // WhatsApp Share
-        document.getElementById('shareWA').onclick = () => {
-            const text = `RuckVision IA - Análisis: ${data.titulo}. Error: ${data.error_principal}. Corrección: ${data.correccion}`;
-            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
-        };
-    }
+  resultado.innerText = data.analysis.error_principal;
+}
 </script>
 
 </body>
